@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>📧 Real-time Mail Sender</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;600&display=swap" rel="stylesheet" />
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Rubik', sans-serif;
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(120deg, #dfe9f3, #ffffff);
+      animation: fadeIn 1s ease-in;
+    }
+
+    h1 {
+      text-align: center;
+      padding: 30px 10px 0;
+      color: #2c3e50;
+      animation: slideDown 1s ease-in-out;
+    }
+
+    form {
+      background: #ffffff;
+      max-width: 450px;
+      margin: 20px auto;
+      padding: 30px 20px;
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      animation: popUp 0.8s ease-out;
+      transition: all 0.3s ease-in-out;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 600;
+      color: #2c3e50;
+    }
+
+    input[type="file"] {
+      width: 100%;
+      padding: 10px;
+      border: 2px dashed #bbb;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      background-color: #f9f9f9;
+      cursor: pointer;
+      transition: border-color 0.3s;
+    }
+
+    input[type="file"]:hover {
+      border-color: #4a90e2;
+    }
+
+    button {
+      width: 100%;
+      background-color: #4a90e2;
+      color: white;
+      font-size: 16px;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #357ABD;
+    }
+
+    #status {
+      white-space: pre-wrap;
+      font-family: monospace;
+      font-size: 14px;
+      color: #333;
+      margin: 30px auto;
+      max-width: 700px;
+      background: rgba(255, 255, 255, 0.95);
+      padding: 20px;
+      border-radius: 15px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.07);
+      animation: fadeInUp 1s ease-in-out;
+    }
+
+    @media (max-width: 600px) {
+      form, #status {
+        width: 90%;
+      }
+
+      h1 {
+        font-size: 22px;
+      }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes popUp {
+      0% {
+        transform: scale(0.95);
+        opacity: 0;
+      }
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    @keyframes fadeInUp {
+      from {
+        transform: translateY(20px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+  </style>
+
+  <script>
+    function startSending() {
+      const form = document.getElementById('uploadForm');
+      const formData = new FormData(form);
+
+      document.getElementById('status').innerHTML = "⏳ Uploading and starting...";
+
+      fetch('/send', {
+        method: 'POST',
+        body: formData
+      }).then(response => {
+        if (response.ok) {
+          document.getElementById('status').innerHTML = "📬 Sending mails...<br><br>";
+          const eventSource = new EventSource("/stream");
+          eventSource.onmessage = function(event) {
+            const logArea = document.getElementById("status");
+            if (event.data === "!!__END_STREAM__!!") {
+              eventSource.close();
+              logArea.innerHTML += "<br><strong style='color:green;'>📴 All mails sent. Process completed successfully.</strong>";
+              return;
+            }
+            logArea.innerHTML += event.data + "<br>";
+            window.scrollTo(0, document.body.scrollHeight);
+          };
+        } else {
+          document.getElementById('status').innerHTML = "❌ Upload failed.";
+        }
+      });
+    }
+  </script>
+</head>
+<body>
+  <h1>📨 Bulk Email Sender with Real-Time Logs</h1>
+
+  <form id="uploadForm" enctype="multipart/form-data">
+    <label for="excel">Select Excel Sheet:</label>
+    <input type="file" name="excel" id="excel" required>
+
+    <label for="resume">Select Resume (PDF):</label>
+    <input type="file" name="resume" id="resume" required>
+
+    <button type="button" onclick="startSending()">🚀 Send Emails</button>
+  </form>
+
+  <div id="status"></div>
+</body>
+</html>
